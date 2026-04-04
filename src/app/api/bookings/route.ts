@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { getTierById } from "@/data/tiers";
 
 export async function POST(req: NextRequest) {
+  let step = "parsing request";
   try {
     const body = await req.json();
     const {
@@ -46,9 +47,11 @@ export async function POST(req: NextRequest) {
     );
     const totalPrice = tier.price * nights * 100; // Convert to cents
 
+    step = "connecting to supabase";
     const supabase = createServerClient();
 
     // Check availability
+    step = "checking availability";
     const { data: available, error: availError } = await supabase.rpc(
       "check_availability",
       { p_tier_id: tier_id, p_check_in: check_in, p_check_out: check_out }
@@ -62,10 +65,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Stripe Checkout session
+    step = "creating stripe session";
     let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     if (siteUrl && !siteUrl.startsWith("http")) {
       siteUrl = `https://${siteUrl}`;
     }
+    siteUrl = siteUrl.trim().replace(/\/+$/, "");
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -78,7 +83,6 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: `The Dream Residence - ${tier.name}`,
               description: `${nights} night${nights > 1 ? "s" : ""} (${check_in} to ${check_out})`,
-              images: [`${siteUrl}${tier.image}`],
             },
             unit_amount: totalPrice,
           },
@@ -99,6 +103,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Save booking as pending
+    step = "saving booking";
     const { error: insertError } = await supabase.from("bookings").insert({
       tier_id,
       check_in,
@@ -129,14 +134,8 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Booking error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
-    const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? `url: ${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 20)}... (length: ${process.env.NEXT_PUBLIC_SUPABASE_URL.length})`
-      : "SUPABASE_URL is not set";
-    const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? `svc key length: ${process.env.SUPABASE_SERVICE_ROLE_KEY.length}`
-      : "SERVICE_ROLE_KEY is not set";
     return NextResponse.json(
-      { error: `Failed to create booking: ${message} [${supaUrl}] [${svcKey}]` },
+      { error: `Failed at step "${step}": ${message}` },
       { status: 500 }
     );
   }
