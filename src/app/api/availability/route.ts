@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,7 +14,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // TODO: Query Supabase for actual availability
-  // For now, return available
-  return NextResponse.json({ available: true });
+  const supabase = createServerClient();
+
+  const { data, error } = await supabase.rpc("check_availability", {
+    p_tier_id: tier,
+    p_check_in: checkIn,
+    p_check_out: checkOut,
+  });
+
+  if (error) {
+    console.error("Availability check error:", error);
+    return NextResponse.json(
+      { error: "Failed to check availability" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ available: data });
 }

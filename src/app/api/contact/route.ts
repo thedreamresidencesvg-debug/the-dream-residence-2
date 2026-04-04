@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,12 +13,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For now, log the inquiry. When Supabase/Resend are configured,
-    // this will save to DB and send email notification.
-    console.log("New inquiry:", { name, email, phone, subject, message });
+    const supabase = createServerClient();
 
-    // TODO: Save to Supabase inquiries table
-    // TODO: Send email notification via Resend
+    const { error } = await supabase.from("inquiries").insert({
+      name,
+      email,
+      phone: phone || null,
+      subject: subject || "General Inquiry",
+      message,
+    });
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return NextResponse.json(
+        { error: "Failed to save inquiry" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch {

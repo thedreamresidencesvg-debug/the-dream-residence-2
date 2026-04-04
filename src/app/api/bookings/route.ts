@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@/lib/supabase/server";
+import { stripe } from "@/lib/stripe";
+import { getTierById } from "@/data/tiers";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,6 +25,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate tier
+    const tier = getTierById(tier_id);
+    if (!tier) {
+      return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
+    }
+
     // Validate dates
     const checkInDate = new Date(check_in);
     const checkOutDate = new Date(check_out);
@@ -32,38 +41,90 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate tier
-    const validTiers = ["private-suite", "full-house", "shared-space"];
-    if (!validTiers.includes(tier_id)) {
-      return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
+    const nights = Math.ceil(
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const totalPrice = tier.price * nights * 100; // Convert to cents
+
+    const supabase = createServerClient();
+
+    // Check availability
+    const { data: available, error: availError } = await supabase.rpc(
+      "check_availability",
+      { p_tier_id: tier_id, p_check_in: check_in, p_check_out: check_out }
+    );
+
+    if (availError || !available) {
+      return NextResponse.json(
+        { error: "Selected dates are not available for this room type" },
+        { status: 409 }
+      );
     }
 
-    const bookingId = "TDR-" + Date.now().toString(36).toUpperCase();
+    // Create Stripe Checkout session
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-    console.log("New booking:", {
-      bookingId,
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      customer_email: guest_email,
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `The Dream Residence - ${tier.name}`,
+              description: `${nights} night${nights > 1 ? "s" : ""} (${check_in} to ${check_out})`,
+              images: [`${siteUrl}${tier.image}`],
+            },
+            unit_amount: totalPrice,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        tier_id,
+        check_in,
+        check_out,
+        guest_name,
+        guest_phone: guest_phone || "",
+        guest_count: String(guest_count || 1),
+        special_requests: special_requests || "",
+      },
+      success_url: `${siteUrl}/booking/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/booking?tier=${tier_id}`,
+    });
+
+    // Save booking as pending
+    const { error: insertError } = await supabase.from("bookings").insert({
       tier_id,
       check_in,
       check_out,
+      total_price: totalPrice,
       guest_name,
       guest_email,
-      guest_phone,
-      guest_count,
-      special_requests,
+      guest_phone: guest_phone || null,
+      guest_count: guest_count || 1,
+      special_requests: special_requests || null,
+      status: "pending",
+      stripe_session_id: session.id,
+      payment_status: "unpaid",
     });
 
-    // TODO: Check availability via Supabase
-    // TODO: Create Stripe Checkout session
-    // TODO: Save booking to Supabase
-    // TODO: Send confirmation email via Resend
+    if (insertError) {
+      console.error("Booking insert error:", insertError);
+      return NextResponse.json(
+        { error: "Failed to create booking" },
+        { status: 500 }
+      );
+    }
 
-    // For now, return success with booking ID
     return NextResponse.json({
       success: true,
-      booking_id: bookingId,
-      // checkout_url will be set when Stripe is configured
+      checkout_url: session.url,
     });
-  } catch {
+  } catch (err) {
+    console.error("Booking error:", err);
     return NextResponse.json(
       { error: "Failed to create booking" },
       { status: 500 }
