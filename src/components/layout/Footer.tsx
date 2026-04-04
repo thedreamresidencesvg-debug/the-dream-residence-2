@@ -95,10 +95,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-warm-700 mt-10 pt-6 text-center text-warm-500 text-sm">
+        <div className="border-t border-warm-700 mt-10 pt-6 text-center text-warm-500 text-sm space-y-1">
           <p>
             &copy; {new Date().getFullYear()} The Dream Residence. All rights
             reserved.
+          </p>
+          <p>
+            Designed by Ryan NovaSoMean McKie / Higandei Technologies
           </p>
         </div>
       </div>
