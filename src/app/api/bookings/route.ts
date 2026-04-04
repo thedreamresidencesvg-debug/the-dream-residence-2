@@ -62,7 +62,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Stripe Checkout session
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    if (siteUrl && !siteUrl.startsWith("http")) {
+      siteUrl = `https://${siteUrl}`;
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
