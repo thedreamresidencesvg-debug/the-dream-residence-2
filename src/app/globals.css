@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-caribbean-50: #FFFEF5;
+  --color-caribbean-100: #FFFBDB;
+  --color-caribbean-200: #FFF4A8;
+  --color-caribbean-300: #FFEA6B;
+  --color-caribbean-400: #F5C518;
+  --color-caribbean-500: #E5B000;
+  --color-caribbean-600: #C48A00;
+  --color-caribbean-700: #9A6400;
+  --color-caribbean-800: #7D5008;
+  --color-caribbean-900: #6A420C;
+
+  --color-purple-50: #F5F0FF;
+  --color-purple-100: #EDE5FF;
+  --color-purple-200: #DDD0FF;
+  --color-purple-300: #C4ABFF;
+  --color-purple-400: #A67CFF;
+  --color-purple-500: #8B4FFF;
+  --color-purple-600: #6B3FA0;
+  --color-purple-700: #5C2D91;
+  --color-purple-800: #4D2578;
+  --color-purple-900: #3D1D60;
+
+  --color-warm-50: #FAFAF5;
+  --color-warm-100: #F5F5F0;
+  --color-warm-200: #E8E8E0;
+  --color-warm-300: #D4D4C8;
+  --color-warm-400: #A8A898;
+  --color-warm-500: #6B7280;
+  --color-warm-600: #565E6C;
+  --color-warm-700: #434A56;
+  --color-warm-800: #2D333B;
+  --color-warm-900: #1C2028;
+
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --background: #FAFAF5;
+  --foreground: #1C2028;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-warm-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-warm-400);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-warm-500);
+}
