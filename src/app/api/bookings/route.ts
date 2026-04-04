@@ -126,8 +126,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Booking error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
+    const keyHint = process.env.STRIPE_SECRET_KEY
+      ? `key starts with: ${process.env.STRIPE_SECRET_KEY.substring(0, 8)}... (length: ${process.env.STRIPE_SECRET_KEY.length})`
+      : "STRIPE_SECRET_KEY is not set";
     return NextResponse.json(
-      { error: `Failed to create booking: ${message}` },
+      { error: `Failed to create booking: ${message} [${keyHint}]` },
       { status: 500 }
     );
   }
