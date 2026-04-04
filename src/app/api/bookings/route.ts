@@ -125,8 +125,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("Booking error:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create booking" },
+      { error: `Failed to create booking: ${message}` },
       { status: 500 }
     );
   }
