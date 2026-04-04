@@ -126,11 +126,14 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Booking error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
-    const keyHint = process.env.STRIPE_SECRET_KEY
-      ? `key starts with: ${process.env.STRIPE_SECRET_KEY.substring(0, 8)}... (length: ${process.env.STRIPE_SECRET_KEY.length})`
-      : "STRIPE_SECRET_KEY is not set";
+    const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? `url: ${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 20)}... (length: ${process.env.NEXT_PUBLIC_SUPABASE_URL.length})`
+      : "SUPABASE_URL is not set";
+    const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? `svc key length: ${process.env.SUPABASE_SERVICE_ROLE_KEY.length}`
+      : "SERVICE_ROLE_KEY is not set";
     return NextResponse.json(
-      { error: `Failed to create booking: ${message} [${keyHint}]` },
+      { error: `Failed to create booking: ${message} [${supaUrl}] [${svcKey}]` },
       { status: 500 }
     );
   }
