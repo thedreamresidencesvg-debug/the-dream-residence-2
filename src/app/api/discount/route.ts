@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // List promotion codes with expanded coupon
     const promos = await stripe.promotionCodes.list({
       code: code.trim(),
       active: true,
@@ -21,44 +20,66 @@ export async function GET(req: NextRequest) {
     }
 
     const promo = promos.data[0];
-    const promoId = promo.id;
-
-    // Retrieve the single promotion code with coupon expanded
-    const fullPromo = await stripe.promotionCodes.retrieve(promoId, {
-      expand: ["coupon"],
-    });
-
-    // Try multiple ways to get coupon data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fp = fullPromo as any;
+    const fp = promo as any;
+
+    // In newer Stripe API versions, coupon may be under "promotion" or accessed differently
+    // Try to get the coupon/promotion ID and retrieve it
+    const promotionId = fp.promotion;
     const couponObj = fp.coupon;
 
-    // If coupon is a string ID, retrieve it
-    if (typeof couponObj === "string") {
-      const coupon = await stripe.coupons.retrieve(couponObj);
+    // Try coupon field first (older API)
+    if (couponObj && typeof couponObj === "object" && couponObj.percent_off !== undefined) {
       return NextResponse.json({
         valid: true,
         code: promo.code,
-        percent_off: coupon.percent_off ?? null,
-        amount_off: coupon.amount_off ?? null,
-        currency: coupon.currency || "usd",
-        name: coupon.name || promo.code,
-      });
-    }
-
-    // If coupon is an object with data
-    if (couponObj && typeof couponObj === "object") {
-      return NextResponse.json({
-        valid: true,
-        code: promo.code,
-        percent_off: couponObj.percent_off ?? null,
-        amount_off: couponObj.amount_off ?? null,
+        percent_off: couponObj.percent_off,
+        amount_off: couponObj.amount_off,
         currency: couponObj.currency || "usd",
         name: couponObj.name || promo.code,
       });
     }
 
-    // Last resort: return all keys for debugging
+    // If promotion field exists, it might be the coupon/discount ID
+    if (promotionId) {
+      // Try retrieving as a coupon
+      try {
+        const coupon = await stripe.coupons.retrieve(promotionId);
+        return NextResponse.json({
+          valid: true,
+          code: promo.code,
+          percent_off: coupon.percent_off ?? null,
+          amount_off: coupon.amount_off ?? null,
+          currency: coupon.currency || "usd",
+          name: coupon.name || promo.code,
+        });
+      } catch {
+        // Not a coupon ID, continue
+      }
+    }
+
+    // Fallback: list all coupons and find one that matches this promo
+    const coupons = await stripe.coupons.list({ limit: 100 });
+    for (const coupon of coupons.data) {
+      // Check if any promo code under this coupon matches our code
+      const promoCheck = await stripe.promotionCodes.list({
+        coupon: coupon.id,
+        code: code.trim(),
+        limit: 1,
+      });
+      if (promoCheck.data.length > 0) {
+        return NextResponse.json({
+          valid: true,
+          code: promo.code,
+          percent_off: coupon.percent_off ?? null,
+          amount_off: coupon.amount_off ?? null,
+          currency: coupon.currency || "usd",
+          name: coupon.name || promo.code,
+        });
+      }
+    }
+
+    // If we still can't find coupon details, return what we have
     return NextResponse.json({
       valid: true,
       code: promo.code,
@@ -66,10 +87,7 @@ export async function GET(req: NextRequest) {
       amount_off: null,
       currency: "usd",
       name: promo.code,
-      debug_promo_keys: Object.keys(fullPromo),
-      debug_promo_id: promoId,
-      debug_coupon_type: typeof couponObj,
-      debug_coupon_value: String(couponObj),
+      debug_promotion: String(promotionId),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
