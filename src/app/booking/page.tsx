@@ -36,8 +36,13 @@ function BookingFlow() {
     requests: "",
   });
   const [discountCode, setDiscountCode] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [discount, setDiscount] = useState<any>(null);
+  const [discount, setDiscount] = useState<{
+    valid: boolean;
+    code: string;
+    percent_off: number | null;
+    amount_off: number | null;
+    name: string;
+  } | null>(null);
   const [discountLoading, setDiscountLoading] = useState(false);
   const [discountError, setDiscountError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -475,9 +480,6 @@ function BookingFlow() {
                     </p>
                     <p className="text-green-600 text-xs">
                       You save {formatCurrency(discountAmount)} on your {formatCurrency(total)} booking
-                    </p>
-                    <p className="text-warm-400 text-xs mt-1 break-all">
-                      DEBUG: {JSON.stringify(discount.raw_coupon || "none")}
                     </p>
                   </div>
                   <button
