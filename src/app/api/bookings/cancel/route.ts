@@ -52,10 +52,18 @@ export async function POST(req: NextRequest) {
       (checkInDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
 
+    // Check if this was a free/discounted booking (no payment intent means 100% discount)
+    const wasFreeBooking = !booking.stripe_payment_intent;
+
     let refundPercent = 0;
     let refundMessage = "";
+    let refundAmount = 0;
 
-    if (daysUntilCheckIn > 7) {
+    if (wasFreeBooking) {
+      refundPercent = 0;
+      refundAmount = 0;
+      refundMessage = "No refund required - this booking was made with a 100% discount.";
+    } else if (daysUntilCheckIn > 7) {
       refundPercent = 100;
       refundMessage = "Full refund - cancelled more than 7 days before check-in.";
     } else if (daysUntilCheckIn >= 3) {
@@ -66,7 +74,9 @@ export async function POST(req: NextRequest) {
       refundMessage = "No refund - cancelled within 3 days of check-in.";
     }
 
-    const refundAmount = Math.round((booking.total_price * refundPercent) / 100);
+    if (!wasFreeBooking) {
+      refundAmount = Math.round((booking.total_price * refundPercent) / 100);
+    }
 
     // Process Stripe refund if applicable
     if (refundAmount > 0 && booking.stripe_payment_intent && booking.payment_status === "paid") {
@@ -119,6 +129,7 @@ export async function POST(req: NextRequest) {
         check_in: booking.check_in,
         check_out: booking.check_out,
         refund_amount: refundAmount,
+        was_free_booking: wasFreeBooking,
       });
     } catch (emailErr) {
       console.error("Failed to send cancellation email:", emailErr);

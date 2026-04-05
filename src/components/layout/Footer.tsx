@@ -101,7 +101,16 @@ export function Footer() {
             reserved.
           </p>
           <p>
-            Designed by Ryan NovaSoMean McKie / Higandei Technologies
+            Designed by{" "}
+            <a
+              href="https://www.instagram.com/novasomean/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-caribbean-400 hover:text-caribbean-300 transition-colors"
+            >
+              NovaSoMean
+            </a>
+            {" "}/ Higandei Technologies
           </p>
         </div>
       </div>

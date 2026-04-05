@@ -200,10 +200,13 @@ export async function sendCancellationEmail(data: {
   check_in: string;
   check_out: string;
   refund_amount: number; // in cents, 0 if no refund
+  was_free_booking?: boolean;
 }) {
-  const refundText = data.refund_amount > 0
-    ? `A refund of <strong>${formatCurrency(data.refund_amount)} USD</strong> will be processed to your original payment method within 5-10 business days.`
-    : `Based on our cancellation policy, no refund is applicable for this cancellation.`;
+  const refundText = data.was_free_booking
+    ? `This booking was made with a complimentary discount code, so no refund is required.`
+    : data.refund_amount > 0
+      ? `A refund of <strong>${formatCurrency(data.refund_amount)} USD</strong> will be processed to your original payment method within 5-10 business days.`
+      : `Based on our cancellation policy, no refund is applicable for this cancellation.`;
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,

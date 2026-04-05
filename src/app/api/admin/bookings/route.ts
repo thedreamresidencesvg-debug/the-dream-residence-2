@@ -107,7 +107,8 @@ export async function PATCH(req: NextRequest) {
         tier_name: tierNames[booking.tier_id] || booking.tier_id,
         check_in: booking.check_in,
         check_out: booking.check_out,
-        refund_amount: booking.payment_status === "paid" ? booking.total_price : 0,
+        refund_amount: booking.payment_status === "paid" && booking.stripe_payment_intent ? booking.total_price : 0,
+        was_free_booking: !booking.stripe_payment_intent,
       });
     } catch {
       // Email failure shouldn't block the cancellation
