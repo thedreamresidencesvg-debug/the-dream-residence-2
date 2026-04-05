@@ -400,6 +400,16 @@ function BookingFlow() {
                 </div>
               </div>
             </div>
+
+            {/* Cancellation Policy */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
+              <h4 className="font-semibold text-amber-800 text-sm mb-2">Cancellation Policy</h4>
+              <ul className="text-amber-700 text-xs space-y-1">
+                <li>Free cancellation up to 7 days before check-in (full refund)</li>
+                <li>50% refund for cancellations 3-7 days before check-in</li>
+                <li>No refund within 3 days of check-in</li>
+              </ul>
+            </div>
           </div>
         )}
 
