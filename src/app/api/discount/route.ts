@@ -20,35 +20,18 @@ export async function GET(req: NextRequest) {
     }
 
     const promo = promos.data[0];
-
-    // Get coupon ID - it could be a string or an expanded object
     const raw = JSON.parse(JSON.stringify(promo));
-    const couponId = typeof raw.coupon === "string"
-      ? raw.coupon
-      : raw.coupon?.id;
 
-    if (!couponId) {
-      return NextResponse.json({
-        valid: true,
-        code: promo.code,
-        percent_off: raw.coupon?.percent_off ?? null,
-        amount_off: raw.coupon?.amount_off ?? null,
-        currency: raw.coupon?.currency || "usd",
-        name: raw.coupon?.name || promo.code,
-        debug: JSON.stringify(raw.coupon),
-      });
-    }
-
-    // Retrieve coupon directly to get all fields
-    const coupon = await stripe.coupons.retrieve(couponId);
-
+    // Return all raw data so we can see the structure
     return NextResponse.json({
       valid: true,
       code: promo.code,
-      percent_off: coupon.percent_off ?? null,
-      amount_off: coupon.amount_off ?? null,
-      currency: coupon.currency || "usd",
-      name: coupon.name || promo.code,
+      percent_off: raw.coupon?.percent_off ?? null,
+      amount_off: raw.coupon?.amount_off ?? null,
+      currency: raw.coupon?.currency || "usd",
+      name: raw.coupon?.name || promo.code,
+      raw_keys: raw.coupon ? Object.keys(raw.coupon) : "no coupon",
+      raw_coupon: raw.coupon,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
