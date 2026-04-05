@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // List promotion codes with expanded coupon
     const promos = await stripe.promotionCodes.list({
       code: code.trim(),
       active: true,
@@ -20,18 +21,55 @@ export async function GET(req: NextRequest) {
     }
 
     const promo = promos.data[0];
-    const raw = JSON.parse(JSON.stringify(promo));
+    const promoId = promo.id;
 
-    // Return all raw data so we can see the structure
+    // Retrieve the single promotion code with coupon expanded
+    const fullPromo = await stripe.promotionCodes.retrieve(promoId, {
+      expand: ["coupon"],
+    });
+
+    // Try multiple ways to get coupon data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fp = fullPromo as any;
+    const couponObj = fp.coupon;
+
+    // If coupon is a string ID, retrieve it
+    if (typeof couponObj === "string") {
+      const coupon = await stripe.coupons.retrieve(couponObj);
+      return NextResponse.json({
+        valid: true,
+        code: promo.code,
+        percent_off: coupon.percent_off ?? null,
+        amount_off: coupon.amount_off ?? null,
+        currency: coupon.currency || "usd",
+        name: coupon.name || promo.code,
+      });
+    }
+
+    // If coupon is an object with data
+    if (couponObj && typeof couponObj === "object") {
+      return NextResponse.json({
+        valid: true,
+        code: promo.code,
+        percent_off: couponObj.percent_off ?? null,
+        amount_off: couponObj.amount_off ?? null,
+        currency: couponObj.currency || "usd",
+        name: couponObj.name || promo.code,
+      });
+    }
+
+    // Last resort: return all keys for debugging
     return NextResponse.json({
       valid: true,
       code: promo.code,
-      percent_off: raw.coupon?.percent_off ?? null,
-      amount_off: raw.coupon?.amount_off ?? null,
-      currency: raw.coupon?.currency || "usd",
-      name: raw.coupon?.name || promo.code,
-      raw_keys: raw.coupon ? Object.keys(raw.coupon) : "no coupon",
-      raw_coupon: raw.coupon,
+      percent_off: null,
+      amount_off: null,
+      currency: "usd",
+      name: promo.code,
+      debug_promo_keys: Object.keys(fullPromo),
+      debug_promo_id: promoId,
+      debug_coupon_type: typeof couponObj,
+      debug_coupon_value: String(couponObj),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
