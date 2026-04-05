@@ -19,6 +19,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thedreamresidencesvg.com"),
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
   title: {
     default: "The Dream Residence | Caribbean Vacation Rental in St. Vincent",
     template: "%s | The Dream Residence",

@@ -35,6 +35,7 @@ function BookingFlow() {
     guests: 1,
     requests: "",
   });
+  const [discountCode, setDiscountCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
@@ -76,6 +77,7 @@ function BookingFlow() {
           guest_phone: guestInfo.phone,
           guest_count: guestInfo.guests,
           special_requests: guestInfo.requests,
+          discount_code: discountCode || undefined,
         }),
       });
 
@@ -399,6 +401,26 @@ function BookingFlow() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Discount Code */}
+            <div className="bg-white rounded-xl border border-warm-200 p-4 mt-4">
+              <label htmlFor="discount" className="block text-sm font-medium text-warm-700 mb-1.5">
+                Discount Code
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="discount"
+                  type="text"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                  placeholder="Enter code (optional)"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-warm-300 focus:ring-2 focus:ring-caribbean-400 focus:border-caribbean-400 outline-none bg-white text-sm uppercase"
+                />
+              </div>
+              <p className="text-warm-400 text-xs mt-1.5">
+                Discount will be applied at checkout if valid
+              </p>
             </div>
 
             {/* Cancellation Policy */}

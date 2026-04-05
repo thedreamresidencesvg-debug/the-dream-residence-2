@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       guest_phone,
       guest_count,
       special_requests,
+      discount_code,
     } = body;
 
     // Validate required fields
@@ -72,7 +73,26 @@ export async function POST(req: NextRequest) {
     }
     siteUrl = siteUrl.trim().replace(/\/+$/, "");
 
-    const session = await stripe.checkout.sessions.create({
+    // Look up Stripe promotion code if provided
+    let discounts: { promotion_code: string }[] | undefined;
+    if (discount_code) {
+      step = "validating discount code";
+      const promos = await stripe.promotionCodes.list({
+        code: discount_code.trim(),
+        active: true,
+        limit: 1,
+      });
+      if (promos.data.length > 0) {
+        discounts = [{ promotion_code: promos.data[0].id }];
+      } else {
+        return NextResponse.json(
+          { error: "Invalid or expired discount code" },
+          { status: 400 }
+        );
+      }
+    }
+
+    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
       payment_method_types: ["card"],
       mode: "payment",
       customer_email: guest_email,
@@ -97,10 +117,19 @@ export async function POST(req: NextRequest) {
         guest_phone: guest_phone || "",
         guest_count: String(guest_count || 1),
         special_requests: special_requests || "",
+        discount_code: discount_code || "",
       },
       success_url: `${siteUrl}/booking/confirmation?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/booking?tier=${tier_id}`,
-    });
+    };
+
+    if (discounts) {
+      sessionParams.discounts = discounts;
+    } else {
+      sessionParams.allow_promotion_codes = true;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     // Save booking as pending
     step = "saving booking";
