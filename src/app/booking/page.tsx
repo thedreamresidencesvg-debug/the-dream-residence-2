@@ -52,13 +52,16 @@ function BookingFlow() {
   const nights = checkIn && checkOut ? calculateNights(new Date(checkIn), new Date(checkOut)) : 0;
   const total = selectedTier ? selectedTier.price * nights : 0;
 
-  const discountAmount = discount
-    ? discount.percent_off
-      ? Math.round(total * discount.percent_off / 100)
-      : discount.amount_off
-        ? discount.amount_off / 100
-        : 0
-    : 0;
+  const discountAmount = (() => {
+    if (!discount) return 0;
+    if (discount.percent_off && discount.percent_off > 0) {
+      return Math.round(total * discount.percent_off / 100);
+    }
+    if (discount.amount_off && discount.amount_off > 0) {
+      return discount.amount_off / 100; // amount_off is in cents from Stripe
+    }
+    return 0;
+  })();
   const finalTotal = Math.max(0, total - discountAmount);
 
   const applyDiscount = async () => {
@@ -475,7 +478,9 @@ function BookingFlow() {
                       {discount.percent_off ? ` — ${discount.percent_off}% off` : ""}
                       {discount.amount_off ? ` — ${formatCurrency(discount.amount_off / 100)} off` : ""}
                     </p>
-                    <p className="text-green-600 text-xs">You save {formatCurrency(discountAmount)}</p>
+                    <p className="text-green-600 text-xs">
+                      You save {formatCurrency(discountAmount)} on your {formatCurrency(total)} booking
+                    </p>
                   </div>
                   <button
                     onClick={removeDiscount}
