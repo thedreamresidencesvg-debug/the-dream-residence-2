@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       .update({
         status: "confirmed",
         payment_status: "paid",
-        stripe_payment_intent: session.payment_intent as string,
+        stripe_payment_intent: (session.payment_intent as string) || null,
         booking_ref: bookingRef,
         updated_at: new Date().toISOString(),
       })

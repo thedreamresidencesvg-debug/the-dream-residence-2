@@ -562,7 +562,11 @@ function BookingFlow() {
               ) : (
                 <CreditCard className="w-5 h-5" />
               )}
-              {isSubmitting ? "Processing..." : `Pay ${formatCurrency(discount ? finalTotal : total)} USD`}
+              {isSubmitting
+                ? "Processing..."
+                : discount && finalTotal === 0
+                  ? "Complete Booking — Free"
+                  : `Pay ${formatCurrency(discount ? finalTotal : total)} USD`}
             </button>
           )}
         </div>

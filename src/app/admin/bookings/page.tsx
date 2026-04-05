@@ -198,12 +198,13 @@ export default function AdminBookingsPage() {
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className={`text-xs font-medium ${
-                            b.payment_status === "paid" ? "text-green-600" :
-                            b.payment_status === "refunded" ? "text-orange-600" :
-                            "text-warm-400"
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            b.payment_status === "paid" ? "bg-green-100 text-green-800" :
+                            b.payment_status === "refunded" ? "bg-orange-100 text-orange-800" :
+                            b.status === "confirmed" ? "bg-green-100 text-green-800" :
+                            "bg-warm-100 text-warm-600"
                           }`}>
-                            {b.payment_status}
+                            {b.status === "confirmed" && b.payment_status === "unpaid" ? "paid (discount)" : b.payment_status}
                           </span>
                         </td>
                         <td className="p-3">
@@ -213,18 +214,16 @@ export default function AdminBookingsPage() {
                                 <button
                                   onClick={() => handleAction(b.id, "complete")}
                                   disabled={actionLoading === b.id}
-                                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                                  title="Mark as completed"
+                                  className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
+                                  Complete
                                 </button>
                                 <button
                                   onClick={() => handleAction(b.id, "cancel")}
                                   disabled={actionLoading === b.id}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                  title="Cancel & refund"
+                                  className="px-2 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded border border-red-200"
                                 >
-                                  <XCircle className="w-4 h-4" />
+                                  Cancel
                                 </button>
                               </>
                             )}
@@ -233,18 +232,16 @@ export default function AdminBookingsPage() {
                                 <button
                                   onClick={() => handleAction(b.id, "confirm")}
                                   disabled={actionLoading === b.id}
-                                  className="p-1.5 text-green-600 hover:bg-green-50 rounded"
-                                  title="Confirm"
+                                  className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded border border-green-200"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
+                                  Confirm
                                 </button>
                                 <button
                                   onClick={() => handleAction(b.id, "cancel")}
                                   disabled={actionLoading === b.id}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                  title="Cancel"
+                                  className="px-2 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded border border-red-200"
                                 >
-                                  <XCircle className="w-4 h-4" />
+                                  Cancel
                                 </button>
                               </>
                             )}
