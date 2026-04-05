@@ -480,6 +480,7 @@ function BookingFlow() {
                     </p>
                     <p className="text-green-600 text-xs">
                       You save {formatCurrency(discountAmount)} on your {formatCurrency(total)} booking
+                      {" "}(pct: {String(discount.percent_off)}, amt: {String(discount.amount_off)})
                     </p>
                   </div>
                   <button
