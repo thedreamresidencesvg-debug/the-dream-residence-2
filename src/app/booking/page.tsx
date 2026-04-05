@@ -36,12 +36,54 @@ function BookingFlow() {
     requests: "",
   });
   const [discountCode, setDiscountCode] = useState("");
+  const [discount, setDiscount] = useState<{
+    valid: boolean;
+    code: string;
+    percent_off: number | null;
+    amount_off: number | null;
+    name: string;
+  } | null>(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountError, setDiscountError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
 
   const nights = checkIn && checkOut ? calculateNights(new Date(checkIn), new Date(checkOut)) : 0;
   const total = selectedTier ? selectedTier.price * nights : 0;
+
+  const discountAmount = discount
+    ? discount.percent_off
+      ? Math.round(total * discount.percent_off / 100)
+      : discount.amount_off
+        ? discount.amount_off / 100
+        : 0
+    : 0;
+  const finalTotal = Math.max(0, total - discountAmount);
+
+  const applyDiscount = async () => {
+    if (!discountCode.trim()) return;
+    setDiscountLoading(true);
+    setDiscountError("");
+    setDiscount(null);
+
+    try {
+      const res = await fetch(`/api/discount?code=${encodeURIComponent(discountCode.trim())}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setDiscount(data);
+    } catch (err) {
+      setDiscountError(err instanceof Error ? err.message : "Invalid code");
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  const removeDiscount = () => {
+    setDiscount(null);
+    setDiscountCode("");
+    setDiscountError("");
+  };
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -395,9 +437,26 @@ function BookingFlow() {
                     <span>{formatCurrency(selectedTier.price)} &times; {nights} night{nights > 1 ? "s" : ""}</span>
                     <span>{formatCurrency(total)}</span>
                   </div>
+                  {discount && discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600 mb-1">
+                      <span>
+                        Discount ({discount.code}{discount.percent_off ? ` - ${discount.percent_off}% off` : ""})
+                      </span>
+                      <span>-{formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-caribbean-600">{formatCurrency(total)} USD</span>
+                    <span className="text-caribbean-600">
+                      {discount && discountAmount > 0 ? (
+                        <>
+                          <span className="line-through text-warm-400 text-sm mr-2">{formatCurrency(total)}</span>
+                          {formatCurrency(finalTotal)} USD
+                        </>
+                      ) : (
+                        <>{formatCurrency(total)} USD</>
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -408,19 +467,48 @@ function BookingFlow() {
               <label htmlFor="discount" className="block text-sm font-medium text-warm-700 mb-1.5">
                 Discount Code
               </label>
-              <div className="flex gap-2">
-                <input
-                  id="discount"
-                  type="text"
-                  value={discountCode}
-                  onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                  placeholder="Enter code (optional)"
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-warm-300 focus:ring-2 focus:ring-caribbean-400 focus:border-caribbean-400 outline-none bg-white text-sm uppercase"
-                />
-              </div>
-              <p className="text-warm-400 text-xs mt-1.5">
-                Discount will be applied at checkout if valid
-              </p>
+              {discount ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div>
+                    <p className="text-green-800 font-semibold text-sm">
+                      {discount.code} applied
+                      {discount.percent_off ? ` — ${discount.percent_off}% off` : ""}
+                      {discount.amount_off ? ` — ${formatCurrency(discount.amount_off / 100)} off` : ""}
+                    </p>
+                    <p className="text-green-600 text-xs">You save {formatCurrency(discountAmount)}</p>
+                  </div>
+                  <button
+                    onClick={removeDiscount}
+                    className="text-red-500 hover:text-red-700 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      id="discount"
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountError(""); }}
+                      placeholder="Enter code"
+                      className="flex-1 px-4 py-2.5 rounded-lg border border-warm-300 focus:ring-2 focus:ring-caribbean-400 focus:border-caribbean-400 outline-none bg-white text-sm uppercase"
+                      onKeyDown={(e) => e.key === "Enter" && applyDiscount()}
+                    />
+                    <button
+                      onClick={applyDiscount}
+                      disabled={!discountCode.trim() || discountLoading}
+                      className="px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 text-sm disabled:opacity-50 transition-colors"
+                    >
+                      {discountLoading ? "..." : "Apply"}
+                    </button>
+                  </div>
+                  {discountError && (
+                    <p className="text-red-600 text-xs mt-1.5">{discountError}</p>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Cancellation Policy */}
@@ -469,7 +557,7 @@ function BookingFlow() {
               ) : (
                 <CreditCard className="w-5 h-5" />
               )}
-              {isSubmitting ? "Processing..." : `Pay ${formatCurrency(total)} USD`}
+              {isSubmitting ? "Processing..." : `Pay ${formatCurrency(discount ? finalTotal : total)} USD`}
             </button>
           )}
         </div>
