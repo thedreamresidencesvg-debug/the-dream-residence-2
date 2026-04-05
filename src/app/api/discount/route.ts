@@ -34,7 +34,9 @@ export async function GET(req: NextRequest) {
       currency: coupon.currency || "usd",
       name: coupon.name || promo.code,
     });
-  } catch {
-    return NextResponse.json({ error: "Failed to validate code" }, { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Discount validation error:", err);
+    return NextResponse.json({ error: `Failed to validate code: ${message}` }, { status: 500 });
   }
 }
