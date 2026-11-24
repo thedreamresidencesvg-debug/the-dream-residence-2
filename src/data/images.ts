@@ -147,6 +147,41 @@ export const images: PropertyImage[] = [
     alt: "Close-up of comfortable king bed with decorative throw",
     category: "bedrooms",
   },
+  {
+    src: "/images/bedrooms/bedroom-master-red-wide.jpg",
+    alt: "Master bedroom with red bedding, wooden headboard, and air conditioning",
+    category: "bedrooms",
+  },
+  {
+    src: "/images/bedrooms/bedroom-master-red-doorway.jpg",
+    alt: "Master bedroom seen from the doorway, with queen bed and dresser",
+    category: "bedrooms",
+  },
+  {
+    src: "/images/bedrooms/bedroom-queen-red-corner.jpg",
+    alt: "Bedroom with upholstered grey headboard, red bedding, and nightstand",
+    category: "bedrooms",
+  },
+  {
+    src: "/images/bedrooms/bedroom-queen-red-close.jpg",
+    alt: "Queen bed with red linens beside a grey dresser",
+    category: "bedrooms",
+  },
+  {
+    src: "/images/bedrooms/bedroom-queen-red-doorway.jpg",
+    alt: "Bedroom from the doorway with dresser, full-length mirror, and patterned curtains",
+    category: "bedrooms",
+  },
+  {
+    src: "/images/bedrooms/bedroom-queen-red-foot.jpg",
+    alt: "View from the foot of the bed toward the bedroom door",
+    category: "bedrooms",
+  },
+  {
+    src: "/images/bedrooms/bedroom-queen-red-dresser.jpg",
+    alt: "Bedroom with dresser, air conditioning, and red bedding",
+    category: "bedrooms",
+  },
 
   // Bathrooms
   {
